@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Language Translator</title>
+
+    <!-- Tailwind via CDN (build‑time purge not needed for demo) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Animate CSS for subtle fade/slide animations -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+
+    <script>
+      // Theme setup — store preference in localStorage
+      if (
+        localStorage.theme === "dark" ||
+        (!("theme" in localStorage) &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ) {
+        document.documentElement.classList.add("dark");
+      }
+    </script>
+
+    <style>
+      /* Custom scrollbar for dark & light */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: theme("colors.gray.200");
+      }
+      ::-webkit-scrollbar-thumb {
+        background: theme("colors.gray.400");
+        border-radius: 4px;
+      }
+      .dark ::-webkit-scrollbar-track {
+        background: theme("colors.gray.800");
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: theme("colors.gray.600");
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col items-center px-4 py-8 selection:bg-indigo-200 selection:text-indigo-900 dark:selection:bg-indigo-600 dark:selection:text-white"
+  >
+    <div class="w-full max-w-2xl">
+      <!-- Header -->
+      <header class="flex justify-between items-center mb-8 animate__animated animate__fadeInDown">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          Text Translator
+        </h1>
+        <button
+          id="themeToggle"
+          class="p-2 rounded-xl bg-gray-200 dark:bg-gray-800 hover:scale-110 transition-transform shadow-inner"
+          aria-label="Toggle theme"
+        >
+          <!-- Heroicon sun/moon swap -->
+          <svg
+            id="sunIcon"
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 hidden dark:block"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m0-13.414l1.414 1.414M17.95 17.95l1.414 1.414M12 8a4 4 0 100 8 4 4 0 000-8z"
+            />
+          </svg>
+
+          <svg
+            id="moonIcon"
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 dark:hidden"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <!-- Translator form -->
+      <form
+        method="post"
+        action="/translate"
+        class="space-y-6 animate__animated animate__fadeInUp"
+      >
+        <div>
+          <label for="sourceText" class="sr-only">Source Text</label>
+          <textarea
+            id="sourceText"
+            name="sourceText"
+            rows="6"
+            class="w-full p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-800 tracking-wide resize-none shadow-sm"
+            placeholder="Enter text to translate..."
+          >{{ source_text }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="sourceLang" class="block text-sm font-medium mb-1"
+              >Source Language</label
+            >
+            <input
+              id="sourceLang"
+              name="sourceLang"
+              type="text"
+              value="{{ source_lang or 'en' }}"
+              class="w-full p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-sm"
+            />
+          </div>
+          <div>
+            <label for="targetLang" class="block text-sm font-medium mb-1"
+              >Target Language</label
+            >
+            <input
+              id="targetLang"
+              name="targetLang"
+              type="text"
+              value="{{ target_lang or 'es' }}"
+              class="w-full p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-sm"
+            />
+          </div>
+        </div>
+
+        <button
+          id="submitBtn"
+          type="submit"
+          class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 focus:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:translate-y-0 transition-all duration-300"
+        >
+          Translate
+        </button>
+      </form>
+
+      <!-- Translation output -->
+      {% if translated_text %}
+      <section class="mt-10 animate__animated animate__fadeIn">
+        <h2 class="text-2xl font-semibold mb-4">Translated Text:</h2>
+        <article
+          class="p-6 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 shadow-inner"
+        >
+          <p class="whitespace-pre-line leading-relaxed">
+            {{ translated_text }}
+          </p>
+        </article>
+      </section>
+      {% endif %}
+    </div>
+
+    <footer
+      class="mt-auto pt-10 text-sm text-gray-500 dark:text-gray-400 text-center animate__animated animate__fadeInUp"
+    >
+      Built with Flask & AWS&nbsp;Translate
+    </footer>
+
+    <!-- JS for interactivity -->
+    <script>
+      // Theme toggle logic
+      document
+        .getElementById("themeToggle")
+        .addEventListener("click", () => {
+          const html = document.documentElement;
+          const sun = document.getElementById("sunIcon");
+          const moon = document.getElementById("moonIcon");
+          if (html.classList.contains("dark")) {
+            html.classList.remove("dark");
+            localStorage.theme = "light";
+            sun.classList.add("hidden");
+            moon.classList.remove("hidden");
+          } else {
+            html.classList.add("dark");
+            localStorage.theme = "dark";
+            sun.classList.remove("hidden");
+            moon.classList.add("hidden");
+          }
+        });
+
+      // Disable button & show loading state on submit
+      const form = document.querySelector("form");
+      const submitBtn = document.getElementById("submitBtn");
+      if (form && submitBtn) {
+        form.addEventListener("submit", () => {
+          submitBtn.disabled = true;
+          submitBtn.innerText = "Translating…";
+          submitBtn.classList.add("animate-pulse");
+        });
+      }
+    </script>
+  </body>
+</html>
